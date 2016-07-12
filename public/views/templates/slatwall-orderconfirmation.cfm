@@ -1,4 +1,4 @@
-/*
+<!---
 
     Slatwall - An Open Source eCommerce Platform
     Copyright (C) ten24, LLC
@@ -43,34 +43,33 @@
     If you modify this program, you may extend this exception to your version
     of the program, but you are not obligated to do so.
 
-	Notes:
+Notes:
 
-*/
+--->
 
-component accessors="true" output="false" extends="Slatwall.integrationServices.BaseIntegration" implements="Slatwall.integrationServices.IntegrationInterface" {
+<!--- This header include should be changed to the header of your site.  Make sure that you review the header to include necessary JS elements for slatwall templates to work --->
+<cfinclude template="_slatwall-header.cfm" />
 
-	public any function init() {
-		return this;
-	}
+<!--- This import allows for the custom tags required by this page to work --->
+<cfimport prefix="sw" taglib="../tags" />
 
-	public string function getIntegrationTypes() {
-		return "payment";
-	}
+<!---[DEVELOPER NOTES]
 
-	public string function getDisplayName() {
-		return "Merchant e-Solutions";
-	}
+	If you would like to customize any of the public tags used by this
+	template, the recommended method is to uncomment the below import,
+	copy the tag you'd like to customize into the directory defined by
+	this import, and then reference with swc:tagname instead of sw:tagname.
+	Technically you can define the prefix as whatever you would like and use
+	whatever directory you would like but we recommend using this for
+	the sake of convention.
 
-	public struct function getSettings() {
-		var settings = {
-			profileID = {fieldType="text"},
-			profileKey = {fieldType="text"},
-			testModeFlag = {fieldType="yesno", defaultValue="1"},
-			testProfileID = {fieldType="text"},
-			testProfileKey = {fieldType="text"},
-			apiUrl = {fieldType="text", defaultValue="https://cert.merchante-solutions.com/mes-api/tridentApi"}
-		};
+	<cfimport prefix="swc" taglib="/Slatwall/custom/public/tags" />
 
-		return settings;
-	}
-}
+--->
+
+<cfoutput>
+	Order Confirmation Page
+</cfoutput>
+
+<!--- This footer should be replaced with the footer of your site --->
+<cfinclude template="_slatwall-footer.cfm" />
