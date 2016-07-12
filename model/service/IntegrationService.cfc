@@ -56,6 +56,7 @@ component extends="HibachiService" persistent="false" accessors="true" output="f
 	variables.shippingIntegrationCFCs = {};
 	variables.authenticationIntegrationCFCs = {};
 	variables.taxIntegrationCFCs = {};
+	variables.dataIntegrationCFCs = {};
 	variables.jsObjectAdditions = '';
 	
 	public void function clearActiveFW1Subsystems() {
@@ -133,6 +134,14 @@ component extends="HibachiService" persistent="false" accessors="true" output="f
 			variables.shippingIntegrationCFCs[ arguments.integration.getIntegrationPackage() ] = integrationCFC;
 		}
 		return variables.shippingIntegrationCFCs[ arguments.integration.getIntegrationPackage() ];
+	}
+	
+	public any function getDataIntegrationCFC(required any integration) {
+		if(!structKeyExists(variables.dataIntegrationCFCs, arguments.integration.getIntegrationPackage())) {
+			var integrationCFC = createObject("component", "Slatwall.integrationServices.#arguments.integration.getIntegrationPackage()#.Data").init();
+			variables.dataIntegrationCFCs[ arguments.integration.getIntegrationPackage() ] = integrationCFC;
+		}
+		return variables.dataIntegrationCFCs[ arguments.integration.getIntegrationPackage() ];
 	}
 
 	public any function getTaxIntegrationCFC(required any integration) {
@@ -301,7 +310,6 @@ component extends="HibachiService" persistent="false" accessors="true" output="f
 	
 	public any function processIntegration_test(required any integration) {
 		var integrationTypes = getIntegrationCFC(arguments.integration).getIntegrationTypes();
-
 		for(var integrationType in integrationTypes) {
 			var integrationCFC = arguments.integration.getIntegrationCFC(integrationType);
 			if(structKeyExists(integrationCFC, "testIntegration")) {
