@@ -124,6 +124,8 @@ class HibachiServiceDecorator{
                     };
 
                     this.metaData.$$getPropertyFormatType = function(propertyName){
+
+                        if(this[propertyName])
                         return _getPropertyFormatType(propertyName,this);
                     };
 
@@ -459,8 +461,8 @@ class HibachiServiceDecorator{
                                                     this['$$add'+property.singularname.charAt(0).toUpperCase()+property.singularname.slice(1)](entityInstance);
                                                 }
                                             }else{
-                                                console.log('value');
-                                                console.log(value);
+
+
                                                 let entityInstance = $delegate.newEntity(this.metaData[property.name].cfc);
                                                     entityInstance.$$init(value);
                                                     this['$$add'+property.singularname.charAt(0).toUpperCase()+property.singularname.slice(1)](entityInstance);
@@ -608,9 +610,14 @@ class HibachiServiceDecorator{
             }
 
             var _getPropertyFormatType = function(propertyName,metaData){
+                if(!propertyName || !metaData){
+                    return 'none';
+                }
+
                 var propertyMetaData = metaData[propertyName];
 
-                if(angular.isDefined(propertyMetaData['hb_formattype'])){
+
+                if(propertyMetaData['hb_formattype']){
                     return propertyMetaData['hb_formattype'];
                 }else if(angular.isUndefined(propertyMetaData.fieldtype) || propertyMetaData.fieldtype === 'column'){
                     var dataType = "";
