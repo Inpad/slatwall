@@ -92,7 +92,7 @@ component extends="Slatwall.meta.tests.unit.SlatwallUnitTestBase" {
 						var newStep = {};
 						newStep["type"] = "pause";
 						//newStep["script"] = "return document.readyState";
-						newStep["value"] = "500";
+						newStep["waitTime"] = "500";
 
 						if(!len(nextStepType) || nextStepType != "pause") {
 								arrayInsertAt(testData["steps"], s+1, newStep);
