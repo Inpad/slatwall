@@ -90,14 +90,14 @@ component extends="Slatwall.meta.tests.unit.SlatwallUnitTestBase" {
 					) {
 
 						var newStep = {};
-						newStep["type"] = "waitForEval";
-						newStep["script"] = "return document.readyState";
-						newStep["value"] = "complete";
+						newStep["type"] = "pause";
+						//newStep["script"] = "return document.readyState";
+						newStep["value"] = "500";
 
-						if(!len(nextStepType) || nextStepType != "waitForEval") {
+						if(!len(nextStepType) || nextStepType != "pause") {
 								arrayInsertAt(testData["steps"], s+1, newStep);
 						}
-						if(!len(lastStepType) || lastStepType != "waitForEval") {
+						if(!len(lastStepType) || lastStepType != "pause") {
 								arrayInsertAt(testData["steps"], s, newStep);
 						}
 
