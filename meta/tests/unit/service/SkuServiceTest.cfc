@@ -46,28 +46,59 @@
 Notes:
 
 */
-component output="false" accessors="true" extends="Slatwall.org.Hibachi.HibachiController" {
+component extends="Slatwall.meta.tests.unit.SlatwallUnitTestBase" {
 
-	property name="workflowService";
-
-	this.publicMethods='';
-	this.publicMethods=listAppend(this.publicMethods, 'executeScheduledWorkflows');
-
-	this.anyAdminMethods='';
-	this.anyAdminMethods=listAppend(this.anyAdminMethods, 'executeScheduleWorkflowTrigger');
-	this.secureMethods='';
-
-	public void function executeScheduledWorkflows() {
-			getWorkflowService().runAllWorkflowsByScheduleTrigger();
-		abort;
+	public void function setUp() {
+		super.setup();
+		variables.service = request.slatwallScope.getService("skuService");
 	}
-
-	public void function executeScheduleWorkflowTrigger(required any rc){
-		if(structKeyExists(arguments.rc, 'workflowTriggerID')){
-			getWorkflowService().runWorkflowTriggerById(arguments.rc.workflowTriggerID);
-		}
-		abort;
+	
+	
+	
+	public void function saveSkuTest_setPublishedFalseIfInactive(){
+		var productData = {
+			productID="",
+			productName="myproduct"& createUUID(),
+			productCode="myproductcode" & createUUID(),
+			activeFlag=1,
+			publishedFlag=1,
+			productType={
+				productTypeID='444df2f7ea9c87e60051f3cd87b435a1'
+			}
+		};
+		var product = createPersistedTestEntity('Product',productData);
+		
+		
+		//start of with an active product
+		assert(product.getActiveFlag());
+		assert(product.getPublishedFlag());
+		
+		//add some active skus
+		var skuData = {
+			skuID="",
+			skuCode="skucode"&createUUID(),
+			activeFlag=1,
+			publishedFlag=1,
+			product={
+				productID=product.getProductID()
+			}
+		};
+		var sku = createPersistedTestEntity('Sku',skuData);
+		
+		assert(sku.getActiveFlag());
+		assert(sku.getPublishedFlag());
+		
+		//set the sku as inactive via the service
+		sku = variables.service.saveSku(sku,{activeFlag=0});
+		
+		//assert that product is still active and published
+		assert(product.getActiveFlag());
+		
+		assert(product.getPublishedFlag());
+		//assert sku publish is set false with active
+		assertFalse(sku.getActiveFlag());
+		assertFalse(sku.getPublishedFlag());
 	}
-
 }
+
 

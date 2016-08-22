@@ -42,6 +42,7 @@ class SWFormFieldController {
 	//@ngInject
 	constructor(
 		public $injector,
+		public $scope,
 		public $timeout,
 		public $log,
 		public $hibachi,
@@ -49,6 +50,7 @@ class SWFormFieldController {
 		public utilityService
 	){
 		this.$injector = $injector;
+		this.$scope= $scope;
 		this.$timeout = $timeout;
 		this.$log = $log;
 		this.$hibachi = $hibachi;
@@ -57,8 +59,10 @@ class SWFormFieldController {
 	}
 
 	public formFieldChanged = (option)=>{
+
 		if(this.fieldType === 'yesno'){
 			this.object.data[this.property] = option.value;
+
 			this.form[this.property].$dirty = true;
 			this.form['selected'+this.object.metaData.className+this.property+this.selectedRadioFormName].$dirty = false;
 		}else if(this.fieldType === 'select'){
@@ -69,11 +73,18 @@ class SWFormFieldController {
 				if(angular.isDefined(this.form[this.object.data[this.property].$$getIDName()])){
 					this.form[this.object.data[this.property].$$getIDName()].$dirty = true;
 				}
-			}else if(this.selectType === 'string'){
+			}else if(this.selectType === 'string' && option && option.value != null){
+
 				this.object.data[this.property] = option.value;
 				this.form[this.property].$dirty = true;
 			}
+
 			this.observerService.notify(this.object.metaData.className+this.property.charAt(0).toUpperCase()+this.property.slice(1)+'OnChange', option);
+		}else{
+			this.object.data[this.property] = option.value;
+
+			this.form[this.property].$dirty = true;
+			this.form['selected'+this.object.metaData.className+this.property+this.selectedRadioFormName].$dirty = false;
 		}
 
 	};
@@ -111,6 +122,7 @@ class SWFormFieldController {
 		}
 
 		if(this.fieldType === 'select'){
+
 			this.selectStrategy();
 		}
 
@@ -119,25 +131,25 @@ class SWFormFieldController {
 	public selectStrategy = ()=>{
 		//this is specific to the admin because it implies loading of options via api
 
-		if(this.swPropertyDisplay){
-			if(angular.isDefined(this.object.metaData[this.property].fieldtype)){
-				this.selectType = 'object';
-				this.$log.debug('selectType:object');
-			}else{
-				this.selectType = 'string';
-				this.$log.debug('selectType:string');
-			}
-
-			if(this.eagerLoadOptions == true){
-				this.getOptions();
-			}
-		}
+        if(angular.isDefined(this.object.metaData[this.property].fieldtype)){
+            this.selectType = 'object';
+            this.$log.debug('selectType:object');
+        }else{
+            this.selectType = 'string';
+            this.$log.debug('selectType:string');
+        }
+		this.getOptions();
 	}
 
 	public getOptions = ()=>{
 
 
 		if(angular.isUndefined(this.options)){
+			if(!this.optionsArguments || !this.optionsArguments.hasOwnProperty('property')){
+				this.optionsArguments={
+					'property':this.propertyIdentifier || this.property
+				};
+			}
 
 			var optionsPromise = this.$hibachi.getPropertyDisplayOptions(this.object.metaData.className,
 				this.optionsArguments
@@ -147,6 +159,7 @@ class SWFormFieldController {
 
 				if(this.selectType === 'object'
 				){
+
 					if(angular.isUndefined(this.object.data[this.property])){
 						this.object.data[this.property] = this.$hibachi['new'+this.object.metaData[this.property].cfc]();
 					}
@@ -186,6 +199,7 @@ class SWFormFieldController {
 
 					}
 				}else if(this.selectType === 'string'){
+
 					if(this.object.data[this.property] !== null){
 						for(var i in this.options){
 							if(this.options[i].value === this.object.data[this.property]){
@@ -193,6 +207,7 @@ class SWFormFieldController {
 								this.object.data[this.property] = this.options[i].value;
 							}
 						}
+
 					}else{
 
 						this.object.data['selected'+this.property] = this.options[0];
@@ -283,7 +298,8 @@ class SWFormField{
         isDirty:"=?",
         onChange:"=?",
 		editable:"=?",
-
+		eventHandlers:"@?",
+		context:"@?"
 	};
 
 	//@ngInject

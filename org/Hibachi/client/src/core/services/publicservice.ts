@@ -7,7 +7,7 @@ import {PublicRequest} from "../model/transient/publicrequest";
 
 class PublicService {
 
-    public ajaxRequestParam:string = "?ajaxRequest=1";
+
     public account:Account;
     public cart:any;
     public states:any;
@@ -47,7 +47,8 @@ class PublicService {
         public requestService,
         public accountService,
         public cartService,
-        public orderService
+        public orderService,
+        public observerService
     ) {
         this.orderService = orderService;
         this.cartService = cartService;
@@ -64,6 +65,7 @@ class PublicService {
         this.$hibachi = $hibachi;
         this.cart = this.cartService.newCart();
         this.account = this.accountService.newAccount();
+        this.observerService = observerService;
     }
 
     // public hasErrors = ()=>{
@@ -116,7 +118,7 @@ class PublicService {
     public getStates=(countryCode:string):any =>  {
        if (!angular.isDefined(countryCode)) countryCode = "US";
        let urlBase = '/index.cfm/api/scope/getStateCodeOptionsByCountryCode/';
-       return this.getData(urlBase, "states", "&countryCode="+countryCode);
+       return this.getData(urlBase, "states", "?countryCode="+countryCode);
     }
 
     /** accessors for states */
@@ -129,7 +131,7 @@ class PublicService {
     /** accessors for states */
     public getData=(url, setter, param):any =>  {
 
-        let urlBase = url + this.ajaxRequestParam + param;
+        let urlBase = url + param;
         let request = this.requestService.newPublicRequest(urlBase);
 
         request.promise.then((result:any)=>{
@@ -176,13 +178,13 @@ class PublicService {
         if (!action) {throw "Action is required exception";}
 
         //check if the caller is defining a path to hit, otherwise use the public scope.
-        if (action.indexOf("/") !== -1){
+        if (action.indexOf(":") !== -1){
             this.baseActionPath = action; //any path
         }else{
             this.baseActionPath = "/index.cfm/api/scope/" + action;//public path
         }
 
-        let urlBase = this.baseActionPath + this.ajaxRequestParam;
+        let urlBase = this.baseActionPath;
 
         if(data){
             method = "post";
@@ -201,7 +203,7 @@ class PublicService {
             }).catch((response)=>{
 
             });
-            this.requests[request.getAction()]=request;;
+            this.requests[request.getAction()]=request;
             return request.promise;
         }else{
             //get
