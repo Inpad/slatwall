@@ -50,6 +50,8 @@ Notes:
 component accessors="true" output="false" displayname="Salesforce" extends="Slatwall.org.Hibachi.HibachiObject" {
 	// Variables Saved in this application scope, but not set by end user
 	variables.authenticationUrl = "${instanceID}/services/oauth2/token";
+	
+	variables.authDetails = {};
 
 	public any function init() {
 		super.init();
@@ -68,7 +70,7 @@ component accessors="true" output="false" displayname="Salesforce" extends="Slat
 //		requestbean.setShipToCountryCode(testAddress.getCountryCode());
 //		return getRates(requestBean);
 	
-		return sendData(requestBean);
+		return getData(requestBean);
 	}
 	
 	public string function getAuthenticationUrl(){
@@ -98,7 +100,7 @@ component accessors="true" output="false" displayname="Salesforce" extends="Slat
 		httpRequest.addParam(type="formfield", name="password", value=setting('password')&setting('securitytoken'));
 		
 		var response = httpRequest.send().getPrefix();
-		writedump(response);abort;
+		return deserializejson(response.Filecontent);
 	}
 	
 	// @hint helper function to return a Setting
@@ -119,14 +121,23 @@ component accessors="true" output="false" displayname="Salesforce" extends="Slat
 		return lcase(listGetAt(getClassFullname(), listLen(getClassFullname(), '.') - 1, '.'));
 	}
 	
-	public any function sendData(required any requestBean) {
-		authenticateWithSalesforce();
-		// Build Request XML
-//		var jsonPacket = {};
+//	public any function sendData(required any requestBean) {
+//		authenticateWithSalesforce();
+//		// Build Request XML
+////		var jsonPacket = {};
+////		
+////		
+////        var JsonResponse = getJsonResponse(jsonPacket);
+//        var responseBean = getDataResponseBean(JsonResponse);
 //		
-//		
-//        var JsonResponse = getJsonResponse(jsonPacket);
-        var responseBean = getDataResponseBean(JsonResponse);
+//		return responseBean;
+//	}
+
+	public any function getData(required any requestBean){
+		variables.authDetails = authenticateWithSalesforce();
+		
+		var JsonResponse = getJsonResponse(jsonPacket);
+		var responseBean = getDataResponseBean(jsonResponse);
 		
 		return responseBean;
 	}
