@@ -61,18 +61,42 @@ component accessors="true" output="false" implements="Slatwall.integrationServic
 	}
 
 	public struct function getSettings() {
+		
 		var settings = {
 			instanceId = {fieldType="text"},
 			userName = {fieldType="text"},
 			password = {fieldType="text"},
 			clientid = {fieldType="text"},
 			clientsecret= {fieldType="text"},
-			securitytoken={fieldType="text"}
+			securitytoken={fieldType="text"},
+			version={fieldType="select"}
+			
 //			currency = {fieldType="text"},
 //			simulatorMode = {fieldType="yesno", defaultValue="1"},
 //			testMode = {fieldType="yesno", defaultValue="1"}
 		};
-		
+		//writedump(settings);abort;
 		return settings;
+	}
+	
+	public array function getSettingOptions(required string settingName, any settingObject) {
+		switch(arguments.settingName) {
+			case "integrationsalesforceVERSION":
+				return getVersionOptions();
+		}
+	}
+	
+	public array function getVersionOptions(){
+		if(isNull(setting('instanceId')) || !len(setting('instanceId'))){
+			return [
+				{
+					name=rbkey('setting.integrationsalesforceInstanceId') & ' required',
+					value=""
+				}
+			];
+		}else{
+			var versionOptions = getHibachiScope().getService('SalesforceService').getVersionOptions(setting('instanceId'));
+			return versionOptions;
+		}
 	}
 }

@@ -49,9 +49,6 @@ Notes:
 
 component accessors="true" output="false" displayname="Salesforce" extends="Slatwall.org.Hibachi.HibachiObject" {
 	// Variables Saved in this application scope, but not set by end user
-	variables.authenticationUrl = "${instanceID}/services/oauth2/token";
-	
-	variables.authDetails = {};
 
 	public any function init() {
 		super.init();
@@ -60,47 +57,12 @@ component accessors="true" output="false" displayname="Salesforce" extends="Slat
 		return this;
 	}
 	
+	
+	
 	public any function testIntegration() {
 		var requestBean = new Slatwall.model.transient.data.DataRequestBean();
-//		var testAddress = getHibachiScope().getAccount().getAddress();
-//		requestbean.setShipToStreetAddress(testAddress.getStreetAddress());
-//		requestbean.setShipToCity(testAddress.getCity());
-//		requestbean.setShipToStateCode(testAddress.getStateCode());
-//		requestbean.setShipToPostalCode(testAddress.getPostalCode());
-//		requestbean.setShipToCountryCode(testAddress.getCountryCode());
-//		return getRates(requestBean);
 	
 		return getData(requestBean);
-	}
-	
-	public string function getAuthenticationUrl(){
-		return getService('hibachiUtilityService').replaceStringTemplate(variables.authenticationUrl,{instanceID=setting('instanceID')});
-	}
-	
-	public any function authenticateWithSalesforce(){
-		var httpRequest = new http();
-		httpRequest.setMethod("POST");
-//		if( paymentMethod.getIntegration().setting('paypalAccountSandboxFlag') ) {
-//			httpRequest.setUrl( variables.sandboxURL );
-//		} else {
-//			httpRequest.setUrl( variables.productionURL );
-//		}
-
-		httpRequest.setPort( 443 );
-		httpRequest.setTimeout( 120 );
-		httpRequest.setResolveurl(false);
-		httpRequest.setUrl(getAuthenticationUrl());
-		
-		//httpRequest.addParam(type="header",name="Content-Type", value="multipart/form-data");
-		
-		httpRequest.addParam(type="formfield", name="grant_type", value="password");
-		httpRequest.addParam(type="formfield", name="client_id", value=setting('clientid'));
-		httpRequest.addParam(type="formfield", name="client_secret", value=setting('clientsecret'));
-		httpRequest.addParam(type="formfield", name="username", value=setting('username'));
-		httpRequest.addParam(type="formfield", name="password", value=setting('password')&setting('securitytoken'));
-		
-		var response = httpRequest.send().getPrefix();
-		return deserializejson(response.Filecontent);
 	}
 	
 	// @hint helper function to return a Setting
@@ -121,25 +83,81 @@ component accessors="true" output="false" displayname="Salesforce" extends="Slat
 		return lcase(listGetAt(getClassFullname(), listLen(getClassFullname(), '.') - 1, '.'));
 	}
 	
-//	public any function sendData(required any requestBean) {
-//		authenticateWithSalesforce();
-//		// Build Request XML
-////		var jsonPacket = {};
-////		
-////		
-////        var JsonResponse = getJsonResponse(jsonPacket);
-//        var responseBean = getDataResponseBean(JsonResponse);
-//		
-//		return responseBean;
-//	}
-
 	public any function getData(required any requestBean){
-		variables.authDetails = authenticateWithSalesforce();
+		variables.authDetails = getService('salesForceService').getAccessTokenByAuthentication(
+			instanceID=setting('instanceId'),
+			clientID=setting('clientid'),
+			clientSecret=setting('clientsecret'),
+			username=setting('userName'),
+			password=setting('password'),
+			securityToken=setting('securitytoken')
+		);
 		
 		var JsonResponse = getJsonResponse(jsonPacket);
 		var responseBean = getDataResponseBean(jsonResponse);
 		
 		return responseBean;
+	}
+	
+	//convert form data to SF format
+	private struct function serializeData(required struct data, required string type){
+		var mapping = variables.mappings[arguments.type];
+		var serializedData = {};
+		
+		for(var i=1; i <= listlen(structKeyList(arguments.data)); i++){
+			//if column isnt in the config then it will error
+			if(structKeyExists(mapping.fields,listgetAt(structKeyList(arguments.data),i))){
+				serializedData[mapping.fields[listgetAt(structKeyList(arguments.data),i)].field] = arguments.data[listgetAt(structKeyList(arguments.data),i)];
+			//}else{
+			//	serializedData[listgetAt(structKeyList(arguments.data),i)] = arguments.data[listgetAt(structKeyList(arguments.data),i)];
+			}
+		}
+		return serializedData;
+	}
+	
+	//convert from SF Format to form format
+	private struct function deserializeData(required struct data, required string type){
+		var mapping = variables.mappings[arguments.type];
+		var deserializedData = {};
+		
+		for(var i=1; i <= listlen(structKeyList(arguments.data)); i++){
+			key='';
+			for(var j=1; j <= listlen(structKeyList(mapping.fields)); j++){
+				if(mapping.fields[listgetat(structKeyList(mapping.fields),j)].field eq listgetAt(structKeyList(arguments.data),i)){
+					key=listgetat(structKeyList(mapping.fields),j);
+				}
+			}
+			if(len(key)){
+				deserializedData[key] = arguments.data[listgetAt(structKeyList(arguments.data),i)];
+			}else{
+				deserializedData[listgetAt(structKeyList(arguments.data),i)] = arguments.data[listgetAt(structKeyList(arguments.data),i)];
+			}
+			key='';
+		}
+		
+		return deserializedData;
+	}
+	
+	private array function getRequiredFields(required struct mapping){
+		var requiredFields=[];
+			
+			for(var i = 1; i <= listlen(structKeyList(arguments.mapping)); i++){
+				if(arguments.mapping[listgetat(structKeyList(arguments.mapping),i)].required eq true){
+					arrayAppend(requiredFields,arguments.mapping[listgetat(structKeyList(arguments.mapping),i)].field);
+				}
+			}
+		return requiredFields;
+	}
+	
+	private array function getIdentifierFields(required struct mapping){
+		var identifierFields=[];
+			
+			for(var i = 1; i <= listLen(structKeyList(arguments.mapping)); i++){
+				if(arguments.mapping[listgetat(structKeyList(arguments.mapping),i)].identifier eq true){
+					arrayAppend(identifierFields,listgetat(structKeyList(arguments.mapping),i));
+				}
+			}
+		return identifierFields;
 	}
 	
 	

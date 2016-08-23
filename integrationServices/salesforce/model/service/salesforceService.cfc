@@ -50,27 +50,86 @@ component extends="Slatwall.model.service.HibachiService" persistent="false" acc
 
 	property name="settingService" type="any";
 	
+	variables.authenticationUrl = "${instanceID}/services/oauth2/token";	
+	variables.dataUrl = "${instanceID}/services/data";
+	variables.authDetails = {};
 	
 	// ===================== START: Logical Methods ===========================
 	
-	public any function getAccessTokenByAuthentication(){
+	public any function getAccessTokenByAuthentication(
+		required string instanceID,
+		required string clientID,
+		required string clientSecret,
+		required string username,
+		required string password,
+		required string securityToken
+	){
 		
 		var httpRequest = new http();
-        httpRequest.setMethod("POST");
+		httpRequest.setMethod("POST");
+//		if( paymentMethod.getIntegration().setting('paypalAccountSandboxFlag') ) {
+//			httpRequest.setUrl( variables.sandboxURL );
+//		} else {
+//			httpRequest.setUrl( variables.productionURL );
+//		}
+
+		httpRequest.setPort( 443 );
+		httpRequest.setTimeout( 120 );
+		httpRequest.setResolveurl(false);
+		httpRequest.setUrl(getAuthenticationUrl(arguments.instanceID));
+		
+		//httpRequest.addParam(type="header",name="Content-Type", value="multipart/form-data");
+		
+		httpRequest.addParam(type="formfield", name="grant_type", value="password");
+		httpRequest.addParam(type="formfield", name="client_id", value=arguments.clientID);
+		httpRequest.addParam(type="formfield", name="client_secret", value=arguments.clientSecret);
+		httpRequest.addParam(type="formfield", name="username", value=arguments.username);
+		httpRequest.addParam(type="formfield", name="password", value=arguments.password&arguments.securityToken);
+		
+		var response = httpRequest.send().getPrefix();
+		writedump(response);abort;
+		return deserializejson(response.Filecontent);
+	}
+	
+	public string function getAuthenticationUrl(required string instanceID){
+		return getService('hibachiUtilityService').replaceStringTemplate(
+			variables.authenticationUrl,{instanceID=arguments.instanceID}
+		);
+	}
+	
+	public string function getDataUrl(required string instanceID){
+		return getService('hibachiUtilityService').replaceStringTemplate(
+			variables.dataUrl,
+			{instanceID=arguments.instanceID}
+		);
+	}
+	
+	public any function getVersionOptions(required instanceID){
+		var httpRequest = new http();
+        httpRequest.setMethod("GET");
 		httpRequest.setPort("443");
 		httpRequest.setTimeout(45);
-		httpRequest.setUrl("https://#setting('IntegrationSalesforceinstanceId')#.salesforce.com/services/oauth2/token");
+		httpRequest.setUrl(getDataUrl(arguments.instanceID));
 		httpRequest.setResolveurl(false);
 		
-		httpRequest.addParam(name="grant_type",value="password");
+		var response = httpRequest.send().getPrefix();
 		
-		httpRequest.addParam(name="username",value=setting('IntegrationSalesforceusername'));
-		httpRequest.addParam(name="password",value=setting('IntegrationSalesforcepassword')+setting('IntegrationSalesforcesecuritytoken'));
-		httpRequest.addParam(name="client_id",value=setting('IntegrationSalesforceclientid'));
-		httpRequest.addParam(name="client_secret",value=setting('IntegrationSalesforceclientsecret'));
 		
-		return deserializeJson(httpRequest.send().getPrefix().fileContent);
+		if(FindNoCase(200,response.statusCode)){
+			var data = deserializeJson(response.fileContent);
+			var versionOptions = [];
+			for(var dataOption in data){
+				versionOption = {};
+				versionOption['name'] = dataOption['version'] & ' - ' & dataOption['label'];
+				versionOption['value'] = dataOption['url'];
+				arrayPrepend(versionOptions,versionOption);
+			}
+			return versionOptions;
+		} 
+		return [];
 	}
+	
+	
 	
 	// =====================  END: Logical Methods ============================
 	
