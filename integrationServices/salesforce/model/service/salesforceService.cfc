@@ -103,7 +103,10 @@ component extends="Slatwall.model.service.HibachiService" persistent="false" acc
 			{instanceID=arguments.instanceID}
 		);
 	}
-	
+	/*
+	*
+	*@description asks salesforce for the available versions based on the instance id
+	*/
 	public any function getVersionOptions(required instanceID){
 		var httpRequest = new http();
         httpRequest.setMethod("GET");
@@ -113,20 +116,23 @@ component extends="Slatwall.model.service.HibachiService" persistent="false" acc
 		httpRequest.setResolveurl(false);
 		
 		var response = httpRequest.send().getPrefix();
-		
-		
+		var versionOptions = [];
 		if(FindNoCase(200,response.statusCode)){
 			var data = deserializeJson(response.fileContent);
-			var versionOptions = [];
 			for(var dataOption in data){
 				versionOption = {};
 				versionOption['name'] = dataOption['version'] & ' - ' & dataOption['label'];
 				versionOption['value'] = dataOption['url'];
 				arrayPrepend(versionOptions,versionOption);
 			}
-			return versionOptions;
-		} 
-		return [];
+			
+		}else{
+			var option = {};
+			option['name']=rbkey('setting.integrationsalesforceInstanceId') & ' incorrect. example: https://naXX.salesforce.com';
+			option['value']="";
+			arrayAppend(versionOptions,option);
+		}
+		return versionOptions;
 	}
 	
 	

@@ -88,12 +88,12 @@ component accessors="true" output="false" implements="Slatwall.integrationServic
 	
 	public array function getVersionOptions(){
 		if(isNull(setting('instanceId')) || !len(setting('instanceId'))){
-			return [
-				{
-					name=rbkey('setting.integrationsalesforceInstanceId') & ' required',
-					value=""
-				}
-			];
+			var versionOptions = [];
+			var option = {};
+			option['name']=rbkey('setting.integrationsalesforceInstanceId') & ' required';
+			option['value']="";
+			arrayAppend(versionOptions,option);
+			return versionOptions;
 		}else{
 			var versionOptions = getHibachiScope().getService('SalesforceService').getVersionOptions(setting('instanceId'));
 			return versionOptions;
