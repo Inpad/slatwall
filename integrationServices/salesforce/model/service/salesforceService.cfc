@@ -51,12 +51,15 @@ component extends="Slatwall.model.service.HibachiService" persistent="false" acc
 	property name="settingService" type="any";
 	
 	variables.authenticationUrl = "${instanceID}/services/oauth2/token";	
-	variables.dataUrl = "${instanceID}/services/data";
+	variables.versionDataUrl = "${instanceID}/services/data";
+	variables.dataUrl = "${instanceID}${version}";
 	variables.authDetails = {};
 	
 	// ===================== START: Logical Methods ===========================
 	
-	public any function getAccessTokenByAuthentication(
+	
+	
+	public any function getResponseByAuthentication(
 		required string instanceID,
 		required string clientID,
 		required string clientSecret,
@@ -67,18 +70,11 @@ component extends="Slatwall.model.service.HibachiService" persistent="false" acc
 		
 		var httpRequest = new http();
 		httpRequest.setMethod("POST");
-//		if( paymentMethod.getIntegration().setting('paypalAccountSandboxFlag') ) {
-//			httpRequest.setUrl( variables.sandboxURL );
-//		} else {
-//			httpRequest.setUrl( variables.productionURL );
-//		}
 
 		httpRequest.setPort( 443 );
 		httpRequest.setTimeout( 120 );
 		httpRequest.setResolveurl(false);
 		httpRequest.setUrl(getAuthenticationUrl(arguments.instanceID));
-		
-		//httpRequest.addParam(type="header",name="Content-Type", value="multipart/form-data");
 		
 		httpRequest.addParam(type="formfield", name="grant_type", value="password");
 		httpRequest.addParam(type="formfield", name="client_id", value=arguments.clientID);
@@ -87,8 +83,13 @@ component extends="Slatwall.model.service.HibachiService" persistent="false" acc
 		httpRequest.addParam(type="formfield", name="password", value=arguments.password&arguments.securityToken);
 		
 		var response = httpRequest.send().getPrefix();
-		writedump(response);abort;
-		return deserializejson(response.Filecontent);
+		
+		var data=  deserializejson(response.Filecontent);
+		if(!findNoCase(200,response.statusCode)){
+			
+			getService('hibachiUtilityService').logMessage(message=data['error'] & " - " & data['error_description'],messageType="SalesForce Integration",messageCode=response.statusCode,logType="Error",generalLog=true);
+		}
+		return response;	
 	}
 	
 	public string function getAuthenticationUrl(required string instanceID){
@@ -97,9 +98,16 @@ component extends="Slatwall.model.service.HibachiService" persistent="false" acc
 		);
 	}
 	
-	public string function getDataUrl(required string instanceID){
+	public string function getDataUrl(required string instanceID, string version){
+		if(structKeyExists(arguments,'version')){
+			return getService('hibachiUtilityService').replaceStringTemplate(
+				variables.dataUrl,
+				{instanceID=arguments.instanceID,version=arguments.version}
+			);
+		}
+		
 		return getService('hibachiUtilityService').replaceStringTemplate(
-			variables.dataUrl,
+			variables.versionDataUrl,
 			{instanceID=arguments.instanceID}
 		);
 	}

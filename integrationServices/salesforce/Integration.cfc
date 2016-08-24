@@ -86,6 +86,10 @@ component accessors="true" output="false" implements="Slatwall.integrationServic
 		}
 	}
 	
+	public string function getSalesforceDataUrl(){
+		return getHibachiScope().getService('SalesforceService').getDataUrl(setting('version'));
+	}
+	
 	public array function getVersionOptions(){
 		if(isNull(setting('instanceId')) || !len(setting('instanceId'))){
 			var versionOptions = [];

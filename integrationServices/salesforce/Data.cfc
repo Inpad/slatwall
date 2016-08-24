@@ -62,7 +62,7 @@ component accessors="true" output="false" displayname="Salesforce" extends="Slat
 	public any function testIntegration() {
 		var requestBean = new Slatwall.model.transient.data.DataRequestBean();
 	
-		return getData(requestBean);
+		return getDataResponseBean(requestBean);
 	}
 	
 	// @hint helper function to return a Setting
@@ -83,8 +83,23 @@ component accessors="true" output="false" displayname="Salesforce" extends="Slat
 		return lcase(listGetAt(getClassFullname(), listLen(getClassFullname(), '.') - 1, '.'));
 	}
 	
+	public any function getDataResponseBean(required any response){
+		var requestBean = new Slatwall.model.transient.data.DataRequestBean();
+		return getData(requestBean);
+	}
+	
+	public any function getContentByResponse(required string response){
+		return deserializeJson(arguments.response.fileContent);
+	}
+	
+	public any function getResponseBeanByResponse(required any response){
+		var responseBean = new Slatwall.model.transient.data.DataResponseBean();
+		responseBean.setData(arguments.data)
+	}
+	
+	
 	public any function getData(required any requestBean){
-		variables.authDetails = getService('salesForceService').getAccessTokenByAuthentication(
+		var authResponse = getService('salesForceService').getResponseByAuthentication(
 			instanceID=setting('instanceId'),
 			clientID=setting('clientid'),
 			clientSecret=setting('clientsecret'),
@@ -93,8 +108,13 @@ component accessors="true" output="false" displayname="Salesforce" extends="Slat
 			securityToken=setting('securitytoken')
 		);
 		
-		var JsonResponse = getJsonResponse(jsonPacket);
-		var responseBean = getDataResponseBean(jsonResponse);
+		var responseBean = getDataResponseBean(authResponse);
+		
+		if(!structKeyExists(authContent,'error')){
+			var authContent = getContentByResponse(authResponse);
+		}else{
+			var responseBean = getResponseBeanByResponse(responseBean);
+		}
 		
 		return responseBean;
 	}
